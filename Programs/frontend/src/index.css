@@ -1,0 +1,77 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: linear-gradient(160deg, #0f0c29, #302b63, #24243e);
+  color: #eee;
+  min-height: 100vh;
+}
+
+.app { max-width: 1100px; margin: 0 auto; padding: 32px 20px; }
+
+.header { text-align: center; margin-bottom: 32px; }
+.header h1 {
+  font-size: 2.4rem;
+  background: linear-gradient(90deg, #1db954, #1ed760);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.header p { color: #aaa; margin-top: 6px; }
+
+.error {
+  background: rgba(255, 77, 109, 0.15);
+  border: 1px solid #ff4d6d;
+  color: #ffb3c1;
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; }
+
+.card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+  backdrop-filter: blur(6px);
+}
+
+.card h2 { font-size: 1.15rem; margin-bottom: 4px; }
+.card .hint { color: #999; font-size: 0.85rem; margin-bottom: 18px; }
+
+.slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.slider-row label { flex: 0 0 170px; font-size: 0.85rem; color: #ccc; }
+.slider-row input[type="range"] { flex: 1; accent-color: #1db954; }
+.slider-value { flex: 0 0 48px; text-align: right; font-size: 0.8rem; color: #1ed760; }
+
+button {
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: #1db954;
+  color: #000;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+button:hover { transform: scale(1.02); background: #1ed760; }
+button:disabled { opacity: 0.6; cursor: wait; }
+
+.result { margin-top: 20px; text-align: center; }
+.big { font-size: 2.4rem; font-weight: 800; color: #1ed760; display: block; }
+.sub { color: #999; font-size: 0.85rem; }
+
+.skip-box { margin-top: 14px; }
+.skip-box p { font-size: 0.9rem; margin-bottom: 6px; }
+.bar-track { height: 10px; background: rgba(255, 255, 255, 0.1); border-radius: 6px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 6px; transition: width 0.4s; }
+
+.segment-name { font-size: 1.3rem; font-weight: 700; color: #1ed760; }
+.segment-desc { color: #ccc; margin-top: 6px; font-size: 0.9rem; }
+.segment-id { color: #777; font-size: 0.8rem; margin-top: 10px; }

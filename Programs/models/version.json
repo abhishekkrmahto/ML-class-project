@@ -1,0 +1,14 @@
+{
+  "version": "v2-1791370423",
+  "trained_at": "2026-10-07 16:23:43",
+  "champion_regressor": "Lasso",
+  "champion_classifier": "Logistic",
+  "metrics": {
+    "test_rmse_log": 0.5995,
+    "test_roc_auc": 0.6841,
+    "brier_calibrated": 0.1622,
+    "nested_cv_rmse": 0.6012,
+    "significance_p_reg": 0.24723,
+    "significance_p_cls": 0.0
+  }
+}

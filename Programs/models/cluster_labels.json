@@ -1,0 +1,18 @@
+{
+  "0": {
+    "name": "Focus Instrumental",
+    "description": "Low-key listener \u2014 calm instrumental music for work and focus."
+  },
+  "1": {
+    "name": "High-Energy Party",
+    "description": "Loves loud, fast, feel-good bangers \u2014 the life of every party."
+  },
+  "2": {
+    "name": "Chill Acoustic Soul",
+    "description": "Prefers soft, acoustic, laid-back tracks for late-night unwinding."
+  },
+  "3": {
+    "name": "Dance Pop Lover",
+    "description": "Hooked on catchy, upbeat, highly danceable pop hits."
+  }
+}

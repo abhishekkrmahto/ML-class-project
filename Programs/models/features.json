@@ -1,0 +1,43 @@
+{
+  "raw_track_features": [
+    "danceability",
+    "energy",
+    "tempo",
+    "valence",
+    "acousticness",
+    "speechiness",
+    "instrumentalness",
+    "playlist_position",
+    "hour_of_day",
+    "is_playlist_radio",
+    "listener_avg_skip_rate",
+    "days_since_release"
+  ],
+  "track_features": [
+    "danceability",
+    "energy",
+    "tempo",
+    "valence",
+    "acousticness",
+    "speechiness",
+    "instrumentalness",
+    "playlist_position",
+    "hour_of_day",
+    "is_playlist_radio",
+    "listener_avg_skip_rate",
+    "days_since_release",
+    "energy_dance",
+    "tempo_norm",
+    "is_night",
+    "is_new_track",
+    "position_early",
+    "taste_segment"
+  ],
+  "listener_features": [
+    "avg_danceability",
+    "avg_energy",
+    "avg_acousticness",
+    "avg_tempo",
+    "avg_valence"
+  ]
+}
