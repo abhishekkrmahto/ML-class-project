@@ -7,8 +7,10 @@ Ab column names MODEL SE AUTO-DETECT hote hain (feature_names_in_).
 Run:  python -m uvicorn backend.main:app --reload
 """
 import json
+import logging
 import os
 import subprocess
+import sys
 import threading
 import time
 from collections import deque
@@ -16,10 +18,13 @@ from collections import deque
 import joblib
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from scripts.features import engineer_features
+
+LOGGER = logging.getLogger(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.join(BASE_DIR, "..")
 MODELS_DIR = os.path.join(ROOT_DIR, "models")
@@ -36,38 +41,9 @@ STATE = {
 LOCK = threading.Lock()
 
 
-
-def _taste_predict(f: pd.DataFrame) -> np.ndarray:
-    km = STATE["taste_kmeans"]
-    cols = list(getattr(km, "feature_names_in_", []))
-    if not cols:  # numpy array pe fit hua tha — koi name check nahi
-        cols = ["danceability", "energy", "acousticness", "tempo", "valence"]
-
-    # avg_* naam ho toh track column pe map karo (dono cases handle)
-    mapping = {}
-    for c in cols:
-        if c in f.columns:
-            mapping[c] = c
-        else:
-            base = c.replace("avg_", "")
-            if base in f.columns:
-                mapping[c] = base
-    sub = f[list(mapping.values())].copy()
-    sub.columns = list(mapping.keys())
-    return km.predict(sub)
-
-
-# ⭐ W4: Feature engineering — single source of truth (prediction + PSI dono)
 def engineer_frame(df: pd.DataFrame) -> pd.DataFrame:
-    """Raw 12 columns -> 18 engineered columns (vectorized)."""
-    f = df.copy()
-    f["energy_dance"] = f["energy"] * f["danceability"]
-    f["tempo_norm"] = (f["tempo"] - 60) / 140
-    f["is_night"] = ((f["hour_of_day"] >= 20) | (f["hour_of_day"] < 6)).astype(int)
-    f["is_new_track"] = (f["days_since_release"] <= 30).astype(int)
-    f["position_early"] = (f["playlist_position"] <= 5).astype(int)
-    f["taste_segment"] = _taste_predict(f)   # ⭐ auto-detect column names
-    return f
+    """Use the same feature definitions as model training."""
+    return engineer_features(df, STATE["taste_kmeans"])
 
 
 def load_models():
@@ -113,7 +89,11 @@ load_models()
 app = FastAPI(title="PlaylistPulse API", version="2.2.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        origin.strip()
+        for origin in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
+        if origin.strip()
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -148,7 +128,9 @@ def psi(expected: np.ndarray, actual: np.ndarray, bins: int = 10) -> float:
     """< 0.1 stable | 0.1-0.25 moderate | > 0.25 major drift."""
     if len(actual) < 20:
         return 0.0
-    edges = np.percentile(expected, np.linspace(0, 100, bins + 1))
+    edges = np.unique(np.percentile(expected, np.linspace(0, 100, bins + 1)))
+    if len(edges) < 2:
+        return 0.0
     edges[0], edges[-1] = -np.inf, np.inf
     e = np.clip(np.histogram(expected, edges)[0] / len(expected), 1e-6, None)
     a = np.clip(np.histogram(actual, edges)[0] / len(actual), 1e-6, None)
@@ -170,7 +152,15 @@ def check_drift():
 # ---------------- Endpoints ----------------
 @app.get("/health")
 def health():
-    return {"status": "ok", "model_version": STATE["version"]}
+    models_loaded = all(
+        STATE[name] is not None
+        for name in ("regressor", "classifier", "kmeans", "taste_kmeans")
+    )
+    return {
+        "status": "ok" if models_loaded else "unavailable",
+        "models_loaded": models_loaded,
+        "model_version": STATE["version"],
+    }
 
 
 @app.get("/metrics")
@@ -227,9 +217,10 @@ def predict(track: TrackFeatures):
             "model_version": STATE["version"],
         }
     except Exception as e:
+        LOGGER.exception("Prediction failed")
         with LOCK:
             STATE["errors_total"] += 1
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Prediction failed") from e
 
 
 @app.post("/segment")
@@ -249,16 +240,30 @@ def segment(listener: ListenerTaste):
 # ---------------- W12: Retraining trigger ----------------
 def _retrain_background():
     try:
-        subprocess.run(["python", "scripts/train.py"], check=True, cwd=ROOT_DIR)
+        subprocess.run(
+            [sys.executable, "scripts/train.py"],
+            check=True,
+            cwd=ROOT_DIR,
+        )
         load_models()
+    except Exception:
+        LOGGER.exception("Background retraining failed")
     finally:
-        STATE["retraining"] = False
+        with LOCK:
+            STATE["retraining"] = False
 
 
 @app.post("/retrain")
-def retrain():
-    if STATE["retraining"]:
-        return {"status": "already retraining"}
-    STATE["retraining"] = True
+def retrain(x_retrain_token: str | None = Header(default=None, alias="X-Retrain-Token")):
+    expected_token = os.getenv("RETRAIN_API_KEY")
+    if not expected_token or x_retrain_token != expected_token:
+        raise HTTPException(
+            status_code=403,
+            detail="Retraining is disabled or the X-Retrain-Token is invalid",
+        )
+    with LOCK:
+        if STATE["retraining"]:
+            return {"status": "already retraining"}
+        STATE["retraining"] = True
     threading.Thread(target=_retrain_background, daemon=True).start()
     return {"status": "retraining started", "note": "thodi der baad /metrics check karo"}

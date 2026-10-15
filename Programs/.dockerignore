@@ -1,0 +1,10 @@
+.git
+.venv
+venv
+__pycache__
+*.py[cod]
+*.db
+mlruns
+mlartifacts
+frontend/node_modules
+frontend/dist
